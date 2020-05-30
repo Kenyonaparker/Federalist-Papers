@@ -1,0 +1,150 @@
+# Reading the Federalist Papers 
+#
+# A Fed object contains one Federalist paper
+# (Right now it has only the number)
+#
+class Fed
+    attr_accessor :fedno
+    attr_accessor :title
+    attr_accessor :publication
+    attr_accessor :author
+    
+    # Constructor
+    def initialize
+      @fedno=0
+      @title=[]
+      @publication=[]
+      @author=[]
+    end
+
+    # Method to print data on one Fed object
+    def prt
+       puts "Federalist #@fedno"
+       puts "Title: " + @title.join(" ")
+       puts "Publication:  " + @publication.join(" ")
+       puts "Author:  "  + @author.join(" ")
+             
+    end
+end
+
+#=========================
+# Main program
+#=========================
+
+# Input will come from file fed.txt
+file = File.new("/export/home/kparker6/fed.txt", "r")
+
+# List of Fed objects 
+feds = []
+readstate = 'b4Fed'
+
+# Read and process each line
+    while (line = file.gets)
+    line.strip!            # Remove trailing white space
+    words = line.split     # Split into array of words
+    if words.length == 0 then
+        next
+    end
+
+    # "FEDERALIST No. number" starts a new Fed object
+    case   
+    
+       when (readstate=='b4Fed' and words.length>=2 and words[0]=='FEDERALIST') # ...create new Fed object in curFed...
+       readstate = 'b4TitlePub'
+       curFed = Fed.new    # Construct new Fed object
+       feds << curFed      # Add it to the array
+       curFed.fedno = words[2]
+       next
+                
+        when (readstate=='b4TitlePub' and not words.empty?)# ...store first line of title in curFed object
+        curFed.title << words
+        readstate = 'inTitlePub'  
+        next
+        
+        when (readstate=='inTitlePub' and not words.empty?)# ...store current line of title in curFed object 
+        if words[0]=='For' or words[0]=='From'
+        curFed.publication << words 
+        readstate= 'b4Author'
+        
+        elsif words[0]=='JAY' or words[0]=='HAMILTON' or words[0]=='MADISON'
+        curFed.author << words
+        readstate = 'b4Fed'
+        
+        else 
+        curFed.title << words
+        end
+        next
+         
+        when (readstate=='b4Author' and not words.empty?) # ... store current line containing author in curFed object     
+        if words[0]=='JAY' or words[0]=='HAMILTON' or words[0]=='MADISON'
+        curFed.author << words
+        readstate = 'b4Fed'
+        
+        elsif words[0]=='Monday,' or words[0]=='Tuesday,' or words[0]=='Wednesday,' or words[0]=='Thursday,' or words[0]=='Friday,' 
+        next
+               
+        #else
+        #curFed.publication << words
+        end
+        next
+        end  
+        # caseend 
+        
+        end #while
+    
+        file.close
+
+# Apply the prt (print) method to each Fed object in the feds array
+feds.each{|f| f.prt}
+
+fedtext = File.new("fedtext1.html", "w") #create html file
+
+fedtext.write "<!DOCTYPE html>
+<html>
+<head>
+<style>
+
+table{ 
+font-family: arial,sans-serif;
+border-collapse:collapse;
+width:100%;
+}
+
+td,th{ 
+  border:3px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+  }
+  </style>
+  </head>
+  <body>
+  
+  <table>
+  <tr>
+  <th>No.</th>
+  <th>Author</th>
+  <th>Title</th>
+  <th>Publication</th>
+  </tr>
+  "
+
+feds.each{|f|
+fedtext.write"
+<tr>
+<td>#{f.fedno}</td>
+<td>#{f.author.join(" ")}</td>
+<td>#{f.title.join(" ")}</td>
+<td>#{f.publication.join(" ")}</td>
+</tr>
+
+"
+}
+
+fedtext.write"
+</table>
+</body>
+</html>
+"
+fedtext.close
+
+feds.each{|f| f.prt}
